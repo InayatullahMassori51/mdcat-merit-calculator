@@ -749,13 +749,13 @@
 
       // eligible badge
       const badge = document.getElementById('eligibleBadge');
-      if (merit >= 60) {
-        badge.textContent = '✔ Eligible';
+      if (merit >= 80) {
+        badge.textContent = '✔ Eligible for MBBS';
         badge.style.background = '#e8f5e9';
         badge.style.borderColor = '#43a047';
         badge.style.color = '#2e7d32';
       } else {
-        badge.textContent = '✘ Check Eligibility';
+        badge.textContent = '⚠ Eligible for BDS';
         badge.style.background = '#fff3e0';
         badge.style.borderColor = '#fb8c00';
         badge.style.color = '#e65100';
