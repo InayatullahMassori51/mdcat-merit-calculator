@@ -30,6 +30,47 @@
     }
 
     /* ══════════════════════════════
+       VISITOR COUNTER STRIP
+    ══════════════════════════════ */
+    .counter-strip {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 16px;
+      width: 100%;
+      max-width: 540px;
+    }
+
+    .counter-box {
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 10px;
+      padding: 10px 20px;
+      text-align: center;
+      flex: 1;
+    }
+
+    .counter-box .c-icon { font-size: 1.2rem; }
+
+    .counter-box .c-num {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.1;
+    }
+
+    .counter-box .c-label {
+      font-size: 0.65rem;
+      color: rgba(255,255,255,0.65);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-top: 2px;
+    }
+
+    /* ══════════════════════════════
        CARD  — roll-number-slip style
     ══════════════════════════════ */
     .card {
@@ -511,8 +552,88 @@
       padding: 0 10px;
     }
   </style>
+  <!-- JSONBin Visitor Counter -->
+  <script>
+    const BIN_ID  = '6ab3e7edac6210605aed782e';
+    const BIN_KEY = '$2a$10$.mpZ4iWo.ZtRPVkBGl7yTO2VC4ETQgp8C9v.6kGXvDBnnSqCWlS8W';
+    const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+    const HEADERS = {
+      'Content-Type': 'application/json',
+      'X-Master-Key': BIN_KEY
+    };
+
+    let statsData = { visitors: 0, calculations: 0 };
+
+    // Stats fetch karo aur visitor count barhao
+    async function initCounter() {
+      try {
+        // GET — current stats
+        const res  = await fetch(`${BIN_URL}/latest`, { headers: HEADERS });
+        const json = await res.json();
+        statsData  = json.record;
+
+        // Visitor +1
+        statsData.visitors += 1;
+
+        // PUT — updated stats
+        await fetch(BIN_URL, {
+          method: 'PUT',
+          headers: HEADERS,
+          body: JSON.stringify(statsData)
+        });
+
+        // Display
+        updateCounterUI();
+      } catch(e) {
+        document.getElementById('visitorCount').textContent = '--';
+        document.getElementById('calcCount').textContent    = '--';
+      }
+    }
+
+    // Calculation count barhao
+    window.incrementCalcCount = async function() {
+      try {
+        const res  = await fetch(`${BIN_URL}/latest`, { headers: HEADERS });
+        const json = await res.json();
+        statsData  = json.record;
+        statsData.calculations += 1;
+
+        await fetch(BIN_URL, {
+          method: 'PUT',
+          headers: HEADERS,
+          body: JSON.stringify(statsData)
+        });
+
+        updateCounterUI();
+      } catch(e) { /* silent */ }
+    };
+
+    function updateCounterUI() {
+      const vc = document.getElementById('visitorCount');
+      const cc = document.getElementById('calcCount');
+      if (vc) vc.textContent = statsData.visitors.toLocaleString();
+      if (cc) cc.textContent = statsData.calculations.toLocaleString();
+    }
+
+    // Page load pe run karo
+    window.addEventListener('DOMContentLoaded', initCounter);
+  </script>
 </head>
 <body>
+
+  <!-- Visitor Counter Strip -->
+  <div class="counter-strip">
+    <div class="counter-box">
+      <div class="c-icon">👥</div>
+      <div class="c-num" id="visitorCount">...</div>
+      <div class="c-label">Total Visitors</div>
+    </div>
+    <div class="counter-box">
+      <div class="c-icon">🧮</div>
+      <div class="c-num" id="calcCount">...</div>
+      <div class="c-label">Aggregates Calculated</div>
+    </div>
+  </div>
 
   <!-- CARD -->
   <div class="card">
@@ -764,6 +885,11 @@
       resultEl.style.display = 'block';
       document.getElementById('pdfBtnWrap').style.display = 'block';
       resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      // Increment calculation counter
+      if (typeof window.incrementCalcCount === 'function') {
+        window.incrementCalcCount();
+      }
     }
 
     function resetForm() {
