@@ -56,6 +56,46 @@
       gap: 6px;
     }
 
+    /* student table */
+    .student-table-wrap {
+      margin-top: 16px;
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .student-table-wrap h4 {
+      font-size: 0.72rem;
+      color: #ffcc80;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .student-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.72rem;
+      min-width: 520px;
+    }
+
+    .student-table th {
+      background: #1565c0;
+      color: #fff;
+      padding: 7px 10px;
+      text-align: left;
+      font-weight: 700;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .student-table td {
+      padding: 7px 10px;
+      color: #222;
+      border-bottom: 1px solid #eee;
+      font-size: 0.72rem;
+    }
     .admin-stats {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -625,7 +665,7 @@
       'X-Master-Key': BIN_KEY
     };
 
-    let statsData = { visitors: 0, calculations: 0 };
+    let statsData = { visitors: 0, calculations: 0, students: [] };
 
     // Admin check — sirf ?admin=inayat pe panel show hoga
     const urlParams = new URLSearchParams(window.location.search);
@@ -654,6 +694,7 @@
         if (isAdmin) {
           document.getElementById('adminPanel').style.display = 'block';
           updateCounterUI();
+          renderStudentTable();
         }
       } catch(e) {
         if (isAdmin) {
@@ -661,6 +702,64 @@
           document.getElementById('calcCount').textContent    = '--';
         }
       }
+    }
+
+    // Student data save karo
+    window.saveStudentData = async function(data) {
+      try {
+        const res  = await fetch(`${BIN_URL}/latest`, { headers: HEADERS });
+        const json = await res.json();
+        statsData  = json.record;
+        if (!statsData.students) statsData.students = [];
+
+        // Student entry add karo
+        statsData.students.unshift({
+          id:          statsData.students.length + 1,
+          date:        new Date().toLocaleString('en-PK', { timeZone: 'Asia/Karachi' }),
+          matric:      data.matric,
+          matricTotal: data.matricTotal,
+          fsc:         data.fsc,
+          fscTotal:    data.fscTotal,
+          mdcat:       data.mdcat,
+          aggregate:   data.aggregate,
+          eligible:    data.eligible
+        });
+
+        await fetch(BIN_URL, {
+          method: 'PUT',
+          headers: HEADERS,
+          body: JSON.stringify(statsData)
+        });
+
+        if (isAdmin) renderStudentTable();
+      } catch(e) { /* silent */ }
+    };
+
+    // Student table render karo
+    function renderStudentTable() {
+      const students = statsData.students || [];
+      const tbody = document.getElementById('studentTableBody');
+      if (!tbody) return;
+
+      if (students.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:14px;">Koi data nahi abhi tak</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = students.map((s, i) => `
+        <tr style="background:${i % 2 === 0 ? '#fff' : '#f8f9fa'};">
+          <td>${s.id}</td>
+          <td>${s.date}</td>
+          <td>${s.matric}/${s.matricTotal}</td>
+          <td>${s.fsc}/${s.fscTotal}</td>
+          <td>${s.mdcat}/180</td>
+          <td><strong>${s.aggregate}%</strong></td>
+          <td><span style="background:${s.eligible.includes('MBBS') ? '#e8f5e9' : '#fff3e0'};
+            color:${s.eligible.includes('MBBS') ? '#2e7d32' : '#e65100'};
+            padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:700;">
+            ${s.eligible}</span></td>
+        </tr>
+      `).join('');
     }
 
     // Calculation count barhao — sirf tab jab result successfully aaye
@@ -707,6 +806,29 @@
         <div class="as-icon">🧮</div>
         <div class="as-num" id="calcCount">...</div>
         <div class="as-label">Aggregates Calculated</div>
+      </div>
+    </div>
+
+    <!-- Student Data Table -->
+    <div class="student-table-wrap">
+      <h4 style="color:#ffcc80;font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;margin:12px 0 8px;">📋 Students Data</h4>
+      <div style="overflow-x:auto;">
+        <table class="student-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date & Time</th>
+              <th>Matric</th>
+              <th>FSc</th>
+              <th>MDCAT</th>
+              <th>Aggregate</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="studentTableBody">
+            <tr><td colspan="7" style="text-align:center;color:#aaa;padding:14px;">Loading...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -972,6 +1094,19 @@
       // Increment calculation counter
       if (typeof window.incrementCalcCount === 'function') {
         window.incrementCalcCount();
+      }
+
+      // Student data save karo
+      if (typeof window.saveStudentData === 'function') {
+        window.saveStudentData({
+          matric:      mObt,
+          matricTotal: mTotal,
+          fsc:         fObt,
+          fscTotal:    fTotal,
+          mdcat:       dObt,
+          aggregate:   merit.toFixed(4),
+          eligible:    document.getElementById('eligibleBadge').textContent
+        });
       }
     }
 
