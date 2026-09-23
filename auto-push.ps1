@@ -2,7 +2,7 @@
 # Jab bhi koi file save ho — automatically GitHub pe push hoga
 
 $folderPath = "C:\Users\abcde\Desktop\MDCAT"
-$token      = "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"
+$token      = "YOUR_GITHUB_TOKEN_HERE"
 $repoUrl    = "https://InayatullahMassori51:$token@github.com/InayatullahMassori51/mdcat-merit-calculator.git"
 
 Set-Location $folderPath
