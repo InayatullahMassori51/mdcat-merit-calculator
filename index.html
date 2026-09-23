@@ -29,6 +29,69 @@
       z-index: 0;
     }
 
+    /* ── ADMIN PANEL ── */
+    .admin-panel {
+      display: none;
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 540px;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+    }
+
+    .admin-panel .admin-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #ff5252;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .admin-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .admin-stat-box {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 12px 14px;
+      text-align: center;
+    }
+
+    .admin-stat-box .as-icon { font-size: 1.3rem; }
+
+    .admin-stat-box .as-num {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.1;
+    }
+
+    .admin-stat-box .as-label {
+      font-size: 0.62rem;
+      color: rgba(255,255,255,0.55);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-top: 3px;
+    }
+
+    .admin-stat-box.visitors { border-color: rgba(33,150,243,0.4); }
+    .admin-stat-box.visitors .as-num { color: #64b5f6; }
+    .admin-stat-box.calcs { border-color: rgba(76,175,80,0.4); }
+    .admin-stat-box.calcs .as-num { color: #81c784; }
+
     /* ══════════════════════════════
        VISITOR COUNTER STRIP
     ══════════════════════════════ */
@@ -564,10 +627,13 @@
 
     let statsData = { visitors: 0, calculations: 0 };
 
+    // Admin check — sirf ?admin=inayat pe panel show hoga
+    const urlParams = new URLSearchParams(window.location.search);
+    const isAdmin   = urlParams.get('admin') === 'inayat';
+
     // Stats fetch karo aur visitor count barhao
     async function initCounter() {
       try {
-        // GET — current stats
         const res  = await fetch(`${BIN_URL}/latest`, { headers: HEADERS });
         const json = await res.json();
         statsData  = json.record;
@@ -575,18 +641,22 @@
         // Visitor +1
         statsData.visitors += 1;
 
-        // PUT — updated stats
         await fetch(BIN_URL, {
           method: 'PUT',
           headers: HEADERS,
           body: JSON.stringify(statsData)
         });
 
-        // Display
-        updateCounterUI();
+        // Sirf admin ko dikhao
+        if (isAdmin) {
+          document.getElementById('adminPanel').style.display = 'block';
+          updateCounterUI();
+        }
       } catch(e) {
-        document.getElementById('visitorCount').textContent = '--';
-        document.getElementById('calcCount').textContent    = '--';
+        if (isAdmin) {
+          document.getElementById('visitorCount').textContent = '--';
+          document.getElementById('calcCount').textContent    = '--';
+        }
       }
     }
 
@@ -621,17 +691,27 @@
 </head>
 <body>
 
-  <!-- Visitor Counter Strip -->
-  <div class="counter-strip">
-    <div class="counter-box">
-      <div class="c-icon">👥</div>
-      <div class="c-num" id="visitorCount">...</div>
-      <div class="c-label">Total Visitors</div>
+  <!-- Admin Panel — sirf ?admin=inayat URL pe dikhega -->
+  <div class="admin-panel" id="adminPanel">
+    <div class="admin-title">🔐 Admin Dashboard — Inayat Bugti</div>
+    <div class="admin-stats">
+      <div class="admin-stat-box visitors">
+        <div class="as-icon">👥</div>
+        <div class="as-num" id="visitorCount">...</div>
+        <div class="as-label">Total Visitors</div>
+      </div>
+      <div class="admin-stat-box calcs">
+        <div class="as-icon">🧮</div>
+        <div class="as-num" id="calcCount">...</div>
+        <div class="as-label">Aggregates Calculated</div>
+      </div>
     </div>
+  </div>
+
+  <!-- Visitor Counter Strip (hidden — IDs moved to admin) -->
+  <div class="counter-strip" style="display:none;">
     <div class="counter-box">
-      <div class="c-icon">🧮</div>
-      <div class="c-num" id="calcCount">...</div>
-      <div class="c-label">Aggregates Calculated</div>
+      <div class="c-num" id="visitorCountDummy">0</div>
     </div>
   </div>
 
